@@ -1,67 +1,90 @@
 public class FeetMeasurementEquality {
 
-    // Feet Class
-    static class Feet {
-        private final double value;
+    // Enum for units
+    enum LengthUnit {
+        FEET(1.0),
+        INCH(1.0 / 12.0);
 
-        public Feet(double value) {
+        private final double toFeetFactor;
+
+        LengthUnit(double toFeetFactor) {
+            this.toFeetFactor = toFeetFactor;
+        }
+
+        public double toFeet(double value) {
+            return value * toFeetFactor;
+        }
+    }
+
+    // Single Quantity class (DRY applied)
+    static class QuantityLength {
+        private final double value;
+        private final LengthUnit unit;
+
+        public QuantityLength(double value, LengthUnit unit) {
+
+            if (unit == null) {
+                throw new IllegalArgumentException("Unit cannot be null");
+            }
+
             this.value = value;
+            this.unit = unit;
+        }
+
+        // Convert to base unit (feet)
+        private double toFeet() {
+            return unit.toFeet(value);
         }
 
         @Override
         public boolean equals(Object obj) {
+
+            // Same reference
             if (this == obj) return true;
+
+            // Null + type check
             if (obj == null || getClass() != obj.getClass()) return false;
 
-            Feet other = (Feet) obj;
-            return Double.compare(this.value, other.value) == 0;
+            QuantityLength other = (QuantityLength) obj;
+
+            // Compare after conversion
+            return Double.compare(this.toFeet(), other.toFeet()) == 0;
         }
-    }
-
-    // Inches Class
-    static class Inches {
-        private final double value;
-
-        public Inches(double value) {
-            this.value = value;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) return true;
-            if (obj == null || getClass() != obj.getClass()) return false;
-
-            Inches other = (Inches) obj;
-            return Double.compare(this.value, other.value) == 0;
-        }
-    }
-
-    // Feet comparison method
-    public static boolean compareFeet(double a, double b) {
-        return new Feet(a).equals(new Feet(b));
-    }
-
-    // Inches comparison method
-    public static boolean compareInches(double a, double b) {
-        return new Inches(a).equals(new Inches(b));
     }
 
     public static void main(String[] args) {
 
-        // Feet checks
-        System.out.println("UC2 Feet Equality:");
-        System.out.println("1.0 ft == 1.0 ft : " + compareFeet(1.0, 1.0));
-        System.out.println("1.0 ft == 2.0 ft : " + compareFeet(1.0, 2.0));
+        // Same unit equality
+        QuantityLength q1 = new QuantityLength(1.0, LengthUnit.FEET);
+        QuantityLength q2 = new QuantityLength(1.0, LengthUnit.FEET);
 
-        // Inches checks
-        System.out.println("\nUC2 Inches Equality:");
-        System.out.println("1.0 inch == 1.0 inch : " + compareInches(1.0, 1.0));
-        System.out.println("1.0 inch == 2.0 inch : " + compareInches(1.0, 2.0));
+        System.out.println("1 ft == 1 ft : " + q1.equals(q2));
+
+        // Cross-unit equality
+        QuantityLength q3 = new QuantityLength(12.0, LengthUnit.INCH);
+
+        System.out.println("1 ft == 12 inch : " + q1.equals(q3));
+
+        // Different values
+        QuantityLength q4 = new QuantityLength(2.0, LengthUnit.FEET);
+
+        System.out.println("1 ft == 2 ft : " + q1.equals(q4));
+
+        // Same unit (inch)
+        QuantityLength q5 = new QuantityLength(1.0, LengthUnit.INCH);
+        QuantityLength q6 = new QuantityLength(1.0, LengthUnit.INCH);
+
+        System.out.println("1 inch == 1 inch : " + q5.equals(q6));
 
         // Edge cases
-        Feet f = new Feet(1.0);
-        System.out.println("\nEdge Cases:");
-        System.out.println("Feet vs null : " + f.equals(null));
-        System.out.println("Feet vs String : " + f.equals("abc"));
+        System.out.println("Compare with null : " + q1.equals(null));
+        System.out.println("Same reference : " + q1.equals(q1));
+
+        // Invalid unit test (will throw exception)
+        try {
+            QuantityLength invalid = new QuantityLength(5.0, null);
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 }
