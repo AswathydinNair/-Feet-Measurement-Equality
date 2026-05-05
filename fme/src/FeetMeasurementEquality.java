@@ -3,7 +3,9 @@ public class FeetMeasurementEquality {
     // Enum for units
     enum LengthUnit {
         FEET(1.0),
-        INCH(1.0 / 12.0);
+        INCH(1.0 / 12.0),
+        YARD(3.0),                 // 1 yard = 3 feet
+        CENTIMETER(0.0328084);     // 1 cm = 0.0328084 feet
 
         private final double toFeetFactor;
 
@@ -47,8 +49,9 @@ public class FeetMeasurementEquality {
 
             QuantityLength other = (QuantityLength) obj;
 
-            // Compare after conversion
-            return Double.compare(this.toFeet(), other.toFeet()) == 0;
+            // Use tolerance for floating comparison
+            double epsilon = 0.0001;
+            return Math.abs(this.toFeet() - other.toFeet()) < epsilon;
         }
     }
 
@@ -62,25 +65,27 @@ public class FeetMeasurementEquality {
 
         // Cross-unit equality
         QuantityLength q3 = new QuantityLength(12.0, LengthUnit.INCH);
-
         System.out.println("1 ft == 12 inch : " + q1.equals(q3));
 
+        // Yard comparison
+        QuantityLength q4 = new QuantityLength(1.0, LengthUnit.YARD);
+        QuantityLength q5 = new QuantityLength(3.0, LengthUnit.FEET);
+        System.out.println("1 yard == 3 ft : " + q4.equals(q5));
+
+        // Centimeter comparison
+        QuantityLength q6 = new QuantityLength(2.54, LengthUnit.CENTIMETER);
+        QuantityLength q7 = new QuantityLength(1.0, LengthUnit.INCH);
+        System.out.println("2.54 cm == 1 inch : " + q6.equals(q7));
+
         // Different values
-        QuantityLength q4 = new QuantityLength(2.0, LengthUnit.FEET);
-
-        System.out.println("1 ft == 2 ft : " + q1.equals(q4));
-
-        // Same unit (inch)
-        QuantityLength q5 = new QuantityLength(1.0, LengthUnit.INCH);
-        QuantityLength q6 = new QuantityLength(1.0, LengthUnit.INCH);
-
-        System.out.println("1 inch == 1 inch : " + q5.equals(q6));
+        QuantityLength q8 = new QuantityLength(2.0, LengthUnit.FEET);
+        System.out.println("1 ft == 2 ft : " + q1.equals(q8));
 
         // Edge cases
         System.out.println("Compare with null : " + q1.equals(null));
         System.out.println("Same reference : " + q1.equals(q1));
 
-        // Invalid unit test (will throw exception)
+        // Invalid unit test
         try {
             QuantityLength invalid = new QuantityLength(5.0, null);
         } catch (Exception e) {
