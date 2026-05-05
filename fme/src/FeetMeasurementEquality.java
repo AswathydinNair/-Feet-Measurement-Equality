@@ -14,9 +14,8 @@ interface IMeasurable {
     String getUnitName();
 }
 
-// ---------- LENGTH UNIT ----------
+// ---------- LENGTH ----------
 enum LengthUnit implements IMeasurable {
-
     FEET(1.0),
     INCH(1.0 / 12.0),
     YARD(3.0),
@@ -37,9 +36,8 @@ enum LengthUnit implements IMeasurable {
     }
 }
 
-// ---------- WEIGHT UNIT ----------
+// ---------- WEIGHT ----------
 enum WeightUnit implements IMeasurable {
-
     KILOGRAM(1.0),
     GRAM(0.001),
     POUND(0.453592);
@@ -47,6 +45,27 @@ enum WeightUnit implements IMeasurable {
     private final double factor;
 
     WeightUnit(double factor) {
+        this.factor = factor;
+    }
+
+    public double getConversionFactor() {
+        return factor;
+    }
+
+    public String getUnitName() {
+        return name();
+    }
+}
+
+// ---------- 🔥 NEW: VOLUME ----------
+enum VolumeUnit implements IMeasurable {
+    LITRE(1.0),
+    MILLILITRE(0.001),      // 1 mL = 0.001 L
+    GALLON(3.78541);        // 1 gal ≈ 3.78541 L
+
+    private final double factor;
+
+    VolumeUnit(double factor) {
         this.factor = factor;
     }
 
@@ -82,20 +101,17 @@ class Quantity<U extends IMeasurable> {
 
     // Convert
     public Quantity<U> convertTo(U targetUnit) {
-
         if (targetUnit == null)
             throw new IllegalArgumentException("Target unit cannot be null");
 
         double base = this.toBase();
         double converted = targetUnit.convertFromBaseUnit(base);
 
-        // Round to 2 decimal places
         converted = Math.round(converted * 100.0) / 100.0;
-
         return new Quantity<>(converted, targetUnit);
     }
 
-    // Add (same unit as first)
+    // Add (same unit)
     public Quantity<U> add(Quantity<U> other) {
         return add(other, this.unit);
     }
@@ -109,10 +125,8 @@ class Quantity<U extends IMeasurable> {
         if (targetUnit == null)
             throw new IllegalArgumentException("Target unit cannot be null");
 
-        // Type safety (extra runtime check)
-        if (!this.unit.getClass().equals(other.unit.getClass())) {
-            throw new IllegalArgumentException("Cannot add different measurement types");
-        }
+        if (!this.unit.getClass().equals(other.unit.getClass()))
+            throw new IllegalArgumentException("Different measurement types");
 
         double sum = this.toBase() + other.toBase();
         double result = targetUnit.convertFromBaseUnit(sum);
@@ -124,24 +138,14 @@ class Quantity<U extends IMeasurable> {
 
     @Override
     public boolean equals(Object obj) {
-
-        if (this == obj) return true;
-
         if (!(obj instanceof Quantity<?>)) return false;
 
         Quantity<?> other = (Quantity<?>) obj;
 
-        // Prevent cross-category comparison
         if (!this.unit.getClass().equals(other.unit.getClass()))
             return false;
 
-        double epsilon = 1e-6;
-        return Math.abs(this.toBase() - other.toBase()) < epsilon;
-    }
-
-    @Override
-    public int hashCode() {
-        return Double.hashCode(toBase());
+        return Math.abs(this.toBase() - other.toBase()) < 1e-6;
     }
 
     @Override
@@ -150,7 +154,7 @@ class Quantity<U extends IMeasurable> {
     }
 }
 
-// ---------- MAIN CLASS ----------
+// ---------- MAIN ----------
 public class FeetMeasurementEquality {
 
     public static void main(String[] args) {
@@ -160,7 +164,6 @@ public class FeetMeasurementEquality {
         Quantity<LengthUnit> l2 = new Quantity<>(12.0, LengthUnit.INCH);
 
         System.out.println("Length Equal: " + l1.equals(l2));
-        System.out.println("Length Convert: " + l1.convertTo(LengthUnit.INCH));
         System.out.println("Length Add: " + l1.add(l2, LengthUnit.YARD));
 
         // ===== WEIGHT =====
@@ -168,16 +171,20 @@ public class FeetMeasurementEquality {
         Quantity<WeightUnit> w2 = new Quantity<>(1000.0, WeightUnit.GRAM);
 
         System.out.println("Weight Equal: " + w1.equals(w2));
-        System.out.println("Weight Convert: " + w2.convertTo(WeightUnit.KILOGRAM));
-        System.out.println("Weight Add: " + w1.add(w2, WeightUnit.POUND));
+        System.out.println("Weight Convert: " + w2.convertTo(WeightUnit.POUND));
 
 
-        try {
-            Quantity raw1 = new Quantity(1.0, LengthUnit.FEET);
-            Quantity raw2 = new Quantity(1.0, WeightUnit.KILOGRAM);
-            raw1.add(raw2);
-        } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        Quantity<VolumeUnit> v1 = new Quantity<>(1.0, VolumeUnit.LITRE);
+        Quantity<VolumeUnit> v2 = new Quantity<>(1000.0, VolumeUnit.MILLILITRE);
+
+        System.out.println("Volume Equal: " + v1.equals(v2));
+
+        Quantity<VolumeUnit> v3 = new Quantity<>(1.0, VolumeUnit.GALLON);
+        System.out.println("Volume Convert: " + v3.convertTo(VolumeUnit.LITRE));
+
+        System.out.println("Volume Add: " + v1.add(v3, VolumeUnit.LITRE));
+
+
+        System.out.println("Length vs Volume: " + l1.equals(v1)); // false
     }
 }
